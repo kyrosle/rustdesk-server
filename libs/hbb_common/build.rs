@@ -17,7 +17,7 @@ fn main() {
         .expect("Codegen failed.");
     Command::new("cargo")
         .args(["fmt"])
-        .current_dir("src/pb")
+        .current_dir("protos")
         .output()
         .unwrap();
     println!("cargo:rerun-if-changed=protos/*.proto");
