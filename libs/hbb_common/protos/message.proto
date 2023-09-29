@@ -1,35 +1,42 @@
 syntax = "proto3";
 package hbb;
 
+// 编码的视频帧
 message EncodedVideoFrame {
-  bytes data = 1;
-  bool key = 2;
-  int64 pts = 3;
+  bytes data = 1; // 视频帧数据
+  bool key = 2;   // 是否为关键帧
+  int64 pts = 3;  // 视频帧的呈现时间戳
 }
 
+// 一组编码的视频帧
 message EncodedVideoFrames { repeated EncodedVideoFrame frames = 1; }
 
+// 是否对 RGB 数据进行压缩
 message RGB { bool compress = 1; }
 
 // planes data send directly in binary for better use arraybuffer on web
+// yuv 编码格式
 message YUV {
+  // 是否数据压缩
   bool compress = 1;
+  // 数据步长
   int32 stride = 2;
 }
 
 message VideoFrame {
-  oneof union {
-    EncodedVideoFrames vp9s = 6;
-    RGB rgb = 7;
-    YUV yuv = 8;
-    EncodedVideoFrames h264s = 10;
-    EncodedVideoFrames h265s = 11;
-  } int64 timestamp = 9;
+  oneof union {                    // [视频帧为以下其中一个]
+    EncodedVideoFrames vp9s = 6;   // vp9
+    RGB rgb = 7;                   // rgb
+    YUV yuv = 8;                   // yuv
+    EncodedVideoFrames h264s = 10; // H.264
+    EncodedVideoFrames h265s = 11; // H.265
+  } int64 timestamp = 9;           // 视频帧时间戳
 }
 
+// 标识 & 主键
 message IdPk {
   string id = 1;
-  bytes pk = 2;
+  bytes pk = 2; // primary key
 }
 
 message DisplayInfo {
@@ -38,15 +45,17 @@ message DisplayInfo {
   int32 width = 3;
   int32 height = 4;
   string name = 5;
-  bool online = 6;
-  bool cursor_embedded = 7;
+  bool online = 6;          // 显示器是否在线
+  bool cursor_embedded = 7; // 鼠标光标是否嵌入显示器中
 }
 
+// 端口转发
 message PortForward {
   string host = 1;
   int32 port = 2;
 }
 
+// 文件传输
 message FileTransfer {
   string dir = 1;
   bool show_hidden = 2;
@@ -76,16 +85,16 @@ message SupportedEncoding {
 }
 
 message PeerInfo {
-  string username = 1;
-  string hostname = 2;
-  string platform = 3;
-  repeated DisplayInfo displays = 4;
-  int32 current_display = 5;
-  bool sas_enabled = 6;
+  string username = 1;               // peer username
+  string hostname = 2;               // peer hostname
+  string platform = 3;               // peer platform name
+  repeated DisplayInfo displays = 4; // peer can have multiple display
+  int32 current_display = 5;         // curernt displaying index
+  bool sas_enabled = 6;              // Secure Access Service
   string version = 7;
   int32 conn_id = 8;
   Features features = 9;
-  SupportedEncoding encoding = 10;
+  SupportedEncoding encoding = 10; // type of encoding (h264/h265)
 }
 
 message LoginResponse {
@@ -99,7 +108,7 @@ message MouseEvent {
   int32 mask = 1;
   sint32 x = 2;
   sint32 y = 3;
-  repeated ControlKey modifiers = 4;
+  repeated ControlKey modifiers = 4; // mouse key type
 }
 
 enum KeyboardMode {
@@ -196,11 +205,11 @@ message KeyEvent {
   bool down = 1;
   bool press = 2;
   oneof union {
-    ControlKey control_key = 3;
-    uint32 chr = 4;
-    uint32 unicode = 5;
-    string seq = 6;
-  } repeated ControlKey modifiers = 8;
+    ControlKey control_key = 3;        // key type
+    uint32 chr = 4;                    // key event char
+    uint32 unicode = 5;                // key event unicode
+    string seq = 6;                    // key event sequence
+  } repeated ControlKey modifiers = 8; // 修饰键(shift,ctrl,alt)
   KeyboardMode mode = 9;
 }
 
@@ -219,21 +228,21 @@ message CursorPosition {
 }
 
 message Hash {
-  string salt = 1;
-  string challenge = 2;
+  string salt = 1;      // 烟值
+  string challenge = 2; // 挑战值
 }
 
 message Clipboard {
-  bool compress = 1;
+  bool compress = 1; // 粘贴版内容是否压缩
   bytes content = 2;
 }
 
 enum FileType {
   Dir = 0;
-  DirLink = 2;
-  DirDrive = 3;
+  DirLink = 2;  // 目录链接
+  DirDrive = 3; // 驱动器目录类型
   File = 4;
-  FileLink = 5;
+  FileLink = 5; // 文件链接
 }
 
 message FileEntry {
@@ -263,15 +272,15 @@ message ReadAllFiles {
 
 message FileAction {
   oneof union {
-    ReadDir read_dir = 1;
-    FileTransferSendRequest send = 2;
-    FileTransferReceiveRequest receive = 3;
-    FileDirCreate create = 4;
-    FileRemoveDir remove_dir = 5;
-    FileRemoveFile remove_file = 6;
-    ReadAllFiles all_files = 7;
-    FileTransferCancel cancel = 8;
-    FileTransferSendConfirmRequest send_confirm = 9;
+    ReadDir read_dir = 1;                   // 读取目录
+    FileTransferSendRequest send = 2;       // 文件传输 发送 请求
+    FileTransferReceiveRequest receive = 3; // 文件传输 接收 请求
+    FileDirCreate create = 4;               // 创建目录
+    FileRemoveDir remove_dir = 5;           // 移除目录
+    FileRemoveFile remove_file = 6;         // 移除文件
+    ReadAllFiles all_files = 7;             // 读取所有问文件
+    FileTransferCancel cancel = 8;          // 取消 文件传输 请求
+    FileTransferSendConfirmRequest send_confirm = 9; // 文件传输 放送确认 请求
   }
 }
 
@@ -355,11 +364,12 @@ message FileDirCreate {
 }
 
 // main logic from freeRDP
+// clipboard
 message CliprdrMonitorReady {}
 
 message CliprdrFormat {
   int32 id = 2;
-  string format = 3;
+  string format = 3; // 文本/图像/文件
 }
 
 message CliprdrServerFormatList { repeated CliprdrFormat formats = 2; }
