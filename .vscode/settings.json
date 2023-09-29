@@ -2,5 +2,8 @@
     "rust.checkWith": "clippy",
     "rust.formatOnSave": true,
     "rust.checkOnSave": true,
-    "rust.useNewErrorFormat": true
+    "rust.useNewErrorFormat": true,
+    "rust-analyzer.linkedProjects": [
+      "./libs/hbb_common/Cargo.toml"
+    ]
 }
