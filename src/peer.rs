@@ -62,7 +62,7 @@ pub(crate) type LockPeer = Arc<RwLock<Peer>>;
 #[derive(Clone)]
 pub(crate) struct PeerMap {
     map: Arc<RwLock<HashMap<String, LockPeer>>>,
-    pub(crate) db: database::Database,
+    pub(crate) db: database::Database, // sqlite with sqlx
 }
 
 impl PeerMap {

@@ -32,15 +32,28 @@ type Usage = (usize, usize, usize, usize);
 lazy_static::lazy_static! {
     static ref PEERS: Mutex<HashMap<String, Box<dyn StreamTrait>>> = Default::default();
     static ref USAGE: RwLock<HashMap<String, Usage>> = Default::default();
+    /// 黑名单
     static ref BLACKLIST: RwLock<HashSet<String>> = Default::default();
+    /// 封锁列表
     static ref BLOCKLIST: RwLock<HashSet<String>> = Default::default();
 }
 
+// 指标超过该阈值时，服务器可以选择采取降级策略以避免过载或提高性能
 static mut DOWNGRADE_THRESHOLD: f64 = 0.66;
+
+// 什么时间间隔内开始检查是否需要进行降级处理
 static mut DOWNGRADE_START_CHECK: usize = 1_800_000; // in ms
+
+// 中继服务器的最大传输速度限制
 static mut LIMIT_SPEED: usize = 4 * 1024 * 1024; // in bit/s
+
+// 中继服务器的总带宽
 static mut TOTAL_BANDWIDTH: usize = 1024 * 1024 * 1024; // in bit/s
+
+// 中继服务器对单个连接或客户端的带宽限制
 static mut SINGLE_BANDWIDTH: usize = 16 * 1024 * 1024; // in bit/s
+
+// 黑名单和封锁列表
 const BLACKLIST_FILE: &str = "blacklist.txt";
 const BLOCKLIST_FILE: &str = "blocklist.txt";
 
