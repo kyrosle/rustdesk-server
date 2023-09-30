@@ -91,12 +91,16 @@ pub fn timeout<T: std::future::Future>(ms: u64, future: T) -> tokio::time::Timeo
 
 pub type ResultType<F, E = anyhow::Error> = anyhow::Result<F, E>;
 
+/// 对 Socket 地址进行编码和解码
+///
 /// Certain router and firewalls scan the packet and if they
 /// find an IP address belonging to their pool that they use to do the NAT mapping/translation, so here we mangle the ip address
-
 pub struct AddrMangle();
 
 #[inline]
+/// 将 IPv6 地址转换为 IPv4 地址
+/// 如果提供的 Socket 地址是 IPv6 地址，并且不是回环地址，将其转换为 IPv4 地址
+/// 如果成功转化则返回 ipv4 socket 地址，否则原样返回
 pub fn try_into_v4(addr: SocketAddr) -> SocketAddr {
     match addr {
         SocketAddr::V6(v6) if !addr.ip().is_loopback() => {
@@ -111,18 +115,27 @@ pub fn try_into_v4(addr: SocketAddr) -> SocketAddr {
 }
 
 impl AddrMangle {
+    /// 对socket进行 编码成字节数组
+    ///
+    /// - 如果提供的 Socket 地址是 IPv4 地址，将其进行特定的编码处理。
+    ///   - 根据当前时间生成一个时间戳 tm，并转换为 u128 类型。
+    ///   - 将 IPv4 地址和 tm 进行位运算，并生成唯一的 u128 值 v。
+    ///   - 将 v 转换为字节数组，并去除末尾的填充零字节。
+    /// - 如果提供的 Socket 地址是 IPv6 地址，将 IPv6 地址的字节表示转换为字节数组，然后追加端口号的字节表示。
     pub fn encode(addr: SocketAddr) -> Vec<u8> {
         // not work with [:1]:<port>
         let addr = try_into_v4(addr);
         match addr {
             SocketAddr::V4(addr_v4) => {
-                let tm = (SystemTime::now()
+                // [ip+tm][tm][port+(tm低16位)]
+                let tm: u128 = (SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_micros() as u32) as u128;
-                let ip = u32::from_le_bytes(addr_v4.ip().octets()) as u128;
+                let ip = u32::from_le_bytes(addr_v4.ip().octets()) as u128; // 字节数组转换为 u32 类型的整数 -> u128
                 let port = addr.port() as u128;
-                let v = ((ip + tm) << 49) | (tm << 17) | (port + (tm & 0xFFFF));
+                // ipv4 32位， ip+tm(唯一标识,区分连接，高位) 达到 v 的最高位(<<49)
+                let v = ((ip + tm) << 49) | (tm << 17) | (port + (tm & 0xFFFF/* tm的低16位 */));
                 let bytes = v.to_le_bytes();
                 let mut n_padding = 0;
                 for i in bytes.iter().rev() {
@@ -144,6 +157,19 @@ impl AddrMangle {
         }
     }
 
+    /// 对字节数组 解码成socket
+    ///
+    /// - 如果提供的字节数组的长度大于16，表示该字节数组可能是 IPv6 地址的编码结果，进行如下处理：
+    ///   - 检查字节数组长度是否正确，如果不正确，则返回一个任意监听地址的配置。
+    ///   - 从字节数组中提取出端口号，并转换为 u16 类型。
+    ///   - 从字节数组中提取出 IPv6 地址的字节表示，并转换为 std::net::Ipv6Addr 类型。
+    ///   - 返回由 IPv6 地址和端口号构成的 Socket 地址。
+    /// - 如果提供的字节数组的长度小于等于16，表示该字节数组是 IPv4 地址的编码结果，进行如下处理：
+    ///   - 创建一个大小为16的零填充字节数组 padded。
+    ///   - 将字节数组复制到 padded 中。
+    ///   - 将 padded 转换为 u128 类型。
+    ///   - 通过位运算和字节转换，从 u128 值中提取 IPv4 地址和端口号。
+    ///   - 返回由 IPv4 地址和端口号构成的 Socket 地址。
     pub fn decode(bytes: &[u8]) -> SocketAddr {
         use std::convert::TryInto;
 
@@ -170,6 +196,7 @@ impl AddrMangle {
     }
 }
 
+// software_url
 pub fn get_version_from_url(url: &str) -> String {
     let n = url.chars().count();
     let a = url.chars().rev().position(|x| x == '-');
