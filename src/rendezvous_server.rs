@@ -301,8 +301,8 @@ impl RendezvousServer {
                             self.handle_listener2(stream, addr).await;
                         }
                         Err(err) => {
-                           log::error!("listener2.accept failed: {}", err);
-                           return LoopFailure::Listener2;
+                          log::error!("listener2.accept failed: {}", err);
+                          return LoopFailure::Listener2;
                         }
                     }
                 }
@@ -314,8 +314,8 @@ impl RendezvousServer {
                             self.handle_listener(stream, addr, key, true).await;
                         }
                         Err(err) => {
-                           log::error!("listener3.accept failed: {}", err);
-                           return LoopFailure::Listener3;
+                          log::error!("listener3.accept failed: {}", err);
+                          return LoopFailure::Listener3;
                         }
                     }
                 }
@@ -326,10 +326,10 @@ impl RendezvousServer {
                             stream.set_nodelay(true).ok();
                             self.handle_listener(stream, addr, key, false).await;
                         }
-                       Err(err) => {
-                           log::error!("listener.accept failed: {}", err);
-                           return LoopFailure::Listener;
-                       }
+                        Err(err) => {
+                          log::error!("listener.accept failed: {}", err);
+                          return LoopFailure::Listener;
+                        }
                     }
                 }
             }
